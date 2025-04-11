@@ -7,7 +7,7 @@ trigger:
   - main
 
 pool:
-  name: Default
+  name: Default 
 
 variables:
   buildConfiguration: 'Release'
@@ -22,7 +22,7 @@ steps:
 - task: NuGetToolInstaller@1
 
 - task: DotNetCoreCLI@2
-  displayName: Restore NuGet Packages
+  displayName: Restore Packages
   inputs:
     command: 'restore'
     projects: '**/*.csproj'
@@ -35,10 +35,27 @@ steps:
     arguments: '--configuration $(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
-  displayName: Run Tests
+  displayName: Run Unit Tests with Code Coverage
   inputs:
     command: 'test'
-    projects: '**/*Tests.csproj'
+    projects: '**/*Tests.csproj' 
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+  condition: succeededOrFailed()
+
+- task: DotNetCoreCLI@2
+  displayName: Publish Application
+  inputs:
+    command: 'publish'
+    publishWebProjects: true
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: false
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish Artifact to Azure DevOps
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'RegistrationApp'
+    publishLocation: 'Container'
+
 
 
