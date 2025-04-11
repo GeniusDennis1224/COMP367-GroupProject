@@ -30,7 +30,7 @@ public class HomeController : Controller
         if (ModelState.IsValid)
         {
             ViewBag.Message = "Registration Successful!";
-            
+            // Delete the unnecessary code line which used for direct user to a RegisterSucessPage.
         }
 
         return View(model);
