@@ -23,6 +23,25 @@ public class HomeController : Controller
         return View();
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public ActionResult Register(RegisterViewModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            ViewBag.Message = "Registration Successful!";
+            return View("RegisterSuccess", model); // Create this view if needed
+        }
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public ActionResult Register()
+    {
+        return View();
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
