@@ -6,56 +6,108 @@
 trigger:
   - main
 
+# Self-hosted agent pool
 pool:
-  name: Default 
+  name: Default
 
 variables:
   buildConfiguration: 'Release'
 
-steps:
-- task: UseDotNet@2
-  inputs:
-    packageType: 'sdk'
-    version: '8.0.100'
-    installationPath: $(Agent.ToolsDirectory)/dotnet
+stages:
+  # ---------- CI: Build & Test ----------
+  - stage: Build
+    displayName: Build and Test Stage
+    jobs:
+      - job: BuildAndTest
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: 'sdk'
+              version: '8.0.x'
 
-- task: NuGetToolInstaller@1
+          - task: NuGetToolInstaller@1
 
-- task: DotNetCoreCLI@2
-  displayName: Restore Packages
-  inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
+          - task: DotNetCoreCLI@2
+            displayName: Restore
+            inputs:
+              command: restore
+              projects: '**/*.csproj'
 
-- task: DotNetCoreCLI@2
-  displayName: Build .NET 8 MVC App
-  inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration)'
+          - task: DotNetCoreCLI@2
+            displayName: Build
+            inputs:
+              command: build
+              projects: '**/*.csproj'
+              arguments: '--configuration $(buildConfiguration)'
 
-- task: DotNetCoreCLI@2
-  displayName: Run Unit Tests with Code Coverage
-  inputs:
-    command: 'test'
-    projects: '**/*Tests.csproj' 
-    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
-  condition: succeededOrFailed()
+          - task: DotNetCoreCLI@2
+            displayName: Test
+            inputs:
+              command: test
+              projects: '**/*Tests.csproj'
+              arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+            condition: succeededOrFailed()
 
-- task: DotNetCoreCLI@2
-  displayName: Publish Application
-  inputs:
-    command: 'publish'
-    publishWebProjects: true
-    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
-    zipAfterPublish: false
+          - task: DotNetCoreCLI@2
+            displayName: Publish App
+            inputs:
+              command: publish
+              publishWebProjects: true
+              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
 
-- task: PublishBuildArtifacts@1
-  displayName: Publish Artifact to Azure DevOps
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'RegistrationApp'
-    publishLocation: 'Container'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'RegistrationApp'
+
+  # ---------- CD: Deliver & Deploy ----------
+  - stage: Deliver
+    displayName: Deliver & Deploy Stage
+    dependsOn: Build
+    jobs:
+      - deployment: Dev
+        displayName: Deploy to Dev Env
+        environment: dev
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: RegistrationApp
+                - script: echo "✅ Deploying to Dev Environment..."
+
+      - deployment: QAT
+        displayName: Deploy to QAT Env
+        environment: qat
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: RegistrationApp
+                - script: echo "✅ Deploying to QAT Environment..."
+
+      - deployment: Staging
+        displayName: Deploy to Staging Env
+        environment: staging
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: RegistrationApp
+                - script: echo "✅ Deploying to Staging Environment..."
+
+      - deployment: Production
+        displayName: Deploy to Production Env
+        environment: production
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: RegistrationApp
+                - script: echo "✅ Deploying to Production Environment..."
 
 
 
