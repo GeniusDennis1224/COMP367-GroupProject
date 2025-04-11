@@ -30,7 +30,7 @@ public class HomeController : Controller
         if (ModelState.IsValid)
         {
             ViewBag.Message = "Registration Successful!";
-            return View("RegisterSuccess", model); // Create this view if needed
+            
         }
 
         return View(model);
