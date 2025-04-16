@@ -18,7 +18,7 @@ public class HomeController : Controller
         return View();
     }
 
-    public IActionResult Privacy()
+    public IActionResult gitPrivacy()
     {
         return View();
     }
@@ -30,7 +30,7 @@ public class HomeController : Controller
         if (ModelState.IsValid)
         {
             ViewBag.Message = "Registration Successful!";
-            
+            // Have been deleted previous code line and insert this comment line for reminding.
         }
 
         return View(model);
